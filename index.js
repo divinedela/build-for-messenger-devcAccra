@@ -1,5 +1,5 @@
 //Get facebook Page access token from environment file
-const { PAGE_ACCESS_TOKEN } = require('./env');
+const { PAGE_ACCESS_TOKEN, NEWSAPI_KEY } = require('./env');
 
 const axios = require('axios');
 const express = require("express");
@@ -44,7 +44,7 @@ app.get('/webhook', (req, res) => {
   }); 
   
 // Creates the endpoint for our webhook 
-app.post('/webhook', (req, res) => {  
+app.post('/webhook', async (req, res) => {  
  
     let body = req.body;
   
@@ -75,17 +75,24 @@ app.post('/webhook', (req, res) => {
   
 });
 
-function handleMessage(sender_psid, received_message) {
+async function handleMessage(sender_psid, received_message) {
     let response;
   
     // Checks if the message contains text
     if (received_message.text) {
-      
-      // Creates the payload for a basic text message, which
-      // will be added to the body of our request to the Send API
-      response = {
-        "text": `You sent the message: "${received_message.text}". Now send me an attachment!`
-      }
+       const articles = await callNewsApi(received_message.text);
+       console.log({articles})
+       if (articles.length)
+        response = createNewsResponseMessage(articles);
+    
+       else {
+        // Creates the payload for a basic text message, which
+        // will be added to the body of our request to the Send API
+        response = {
+         "text": `No news article found for your text : "${received_message.text}".`
+        }
+
+       }
   
     } else if (received_message.attachments) {
         // Get the URL of the message attachment
@@ -137,4 +144,40 @@ function callSendAPI(sender_psid, response) {
     axios.post(`${sendMessageUri}`, request_body)
         .then(res => console.log('message sent!', res))
         .catch(err => console.log(`ERROR: ${err}`));
+}
+
+
+async function callNewsApi(query) {
+    const url = `http://newsapi.org/v2/everything?q=${query}&apiKey=${NEWSAPI_KEY}`;
+    const response = await axios(`${url}`);
+    if (response && response.data.articles) {
+        let { articles } = response.data;
+        if (articles.length > 5) {
+            articles = articles.slice(0, 6);
+        }
+        return articles;
+    }
+}
+
+function createNewsResponseMessage(articles) {
+    const articleElements = createArticleElements(articles);
+    return  {
+        "attachment": {
+            "type": "template",
+            "payload": {
+                "template_type": "generic",
+                "elements": articleElements
+            }
+        }
+    };
+}
+
+function createArticleElements(articles) {
+    return articles.map(a => {
+        return {
+            title: a.title,
+            image_url: a.urlToImage,
+            subtitle: a.author
+        }
+    });
 }
