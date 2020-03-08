@@ -177,7 +177,19 @@ function createArticleElements(articles) {
         return {
             title: a.title,
             image_url: a.urlToImage,
-            subtitle: a.author
+            subtitle: a.author,
+            default_action: {
+                type: 'web_url',
+                url: a.url,
+                webview_height_ratio: "tall",
+            },
+            "buttons":[
+                {
+                  type:'web_url',
+                  url: a.url,
+                  title:'View Website'
+                }             
+            ]  
         }
     });
 }
