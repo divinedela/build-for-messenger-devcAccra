@@ -1,5 +1,5 @@
 //Get facebook Page access token from environment file
-const { PAGE_ACCESS_TOKEN, NEWSAPI_KEY } = require('./env');
+const { PAGE_ACCESS_TOKEN, NEWSAPI_KEY, VERIFY_TOKEN } = require('./env');
 
 const axios = require('axios');
 const express = require("express");
@@ -17,10 +17,6 @@ app.get('/', (request, response) => {
 
 // Adds support for GET requests to our webhook
 app.get('/webhook', (req, res) => {
-
-    // Your verify token. Should be a random string.
-    let VERIFY_TOKEN =  '77687768'
-      
     // Parse the query params
     let mode = req.query['hub.mode'];
     let token = req.query['hub.verify_token'];
